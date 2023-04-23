@@ -1,5 +1,5 @@
 import React, { useState, useCallback, memo } from "react";
-import useSWR from 'swr'
+import useSWR, { SWRConfig } from 'swr'
 
 const fetcher = (...args: any) => {
   console.log("load");
@@ -7,8 +7,38 @@ const fetcher = (...args: any) => {
   return fetch(...args).then(res => res.json());
 }
 
-const Profile = memo(() => {
-  const { data, error, isLoading } = useSWR('https://gy3zydeqy7.execute-api.ap-northeast-1.amazonaws.com/default/python_test', fetcher)
+export async function getStaticProps() {
+  // `getStaticProps` はサーバー側で実行されます
+  // const staticdata_test = await fetcher("https://gy3zydeqy7.execute-api.ap-northeast-1.amazonaws.com/default/python_test");
+  return {
+    props: {
+      staticProps: {
+        'https://gy3zydeqy7.execute-api.ap-northeast-1.amazonaws.com/default/python_test': "staticdata_test"
+      }
+    }
+  }
+}
+
+
+function usePythonD() {
+  // const { data, error, isLoading } = useSWR(`/api/user/${id}`, fetcher)
+  const options = {
+    // fallbackData: props.staticdata_test
+    fallbackData: "OO"
+  }
+  // console.log(options);
+
+  const { data, error, isLoading } = useSWR(`https://gy3zydeqy7.execute-api.ap-northeast-1.amazonaws.com/default/python_test`, fetcher, options)
+
+  return {
+    data: data,
+    error: error,
+    isLoading,
+  }
+}
+
+const Profile = memo((props) => {
+  const { data, error, isLoading } = usePythonD(props);
 
   if (error) return <div>failed to load</div>
   if (isLoading) return <div>loading...</div>
@@ -18,24 +48,29 @@ const Profile = memo(() => {
 })
 
 
-const main = memo(() => {
+const main = (({ staticProps }) => {
+
   return (
-    <div className={""}>
-      hello
+    <SWRConfig value={{ staticProps }}>
+      <div className={""}>
+        hello
 
-      <Profile />
+        <Profile />
 
-      {
-        [...Array(100)].map((_, i) => {
-          return (
-            <div key={i}>
-              OK
-            </div>
-          )
-        })
-      }
+        {
+          [...Array(100)].map((_, i) => {
+            return (
+              <div key={i}>
+                OK
+              </div>
+            )
+          })
+        }
 
-    </div>
+      </div>
+    </SWRConfig>
+
+
   )
 })
 
